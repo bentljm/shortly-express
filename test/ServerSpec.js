@@ -248,6 +248,13 @@ describe('', function() {
       });
     });
 
+    it('Redirects to login page if a user logs out of app', function(done) {
+      request('http://127.0.0.1:4568/logout', function(error, res, body) {
+        expect(res.req.path).to.equal('/login');
+        done();
+      });
+    });
+
   }); // 'Priviledged Access'
 
   describe('Account Creation:', function() {
@@ -268,8 +275,38 @@ describe('', function() {
           .then(function(res) {
             if (res[0] && res[0]['username']) {
               var user = res[0]['username'];
+              var password = res[0]['password'];
             }
             expect(user).to.equal('Svnh');
+            expect(password.length).to.equal(60);
+            done();
+          }).catch(function(err) {
+            throw {
+              type: 'DatabaseError',
+              message: 'Failed to create test setup data'
+            };
+          });
+      });
+    });
+
+    it('Signup creates a user with a hash password', function(done) {
+      var options = {
+        'method': 'POST',
+        'uri': 'http://127.0.0.1:4568/signup',
+        'json': {
+          'username': 'Svnh',
+          'password': 'Svnh'
+        }
+      };
+
+      request(options, function(error, res, body) {
+        db.knex('users')
+          .where('username', '=', 'Svnh')
+          .then(function(res) {
+            if (res[0] && res[0]['password']) {
+              var password = res[0]['password'];
+            }
+            expect(password.length).to.equal(60);
             done();
           }).catch(function(err) {
             throw {
